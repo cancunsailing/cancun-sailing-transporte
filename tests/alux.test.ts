@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PARAMETROS_BASE, lugares, proponer, violacionesTiempo, type ReservaAlux } from '@/lib/alux/proponer';
+import { PARAMETROS_BASE, aHora, lugares, planHorario, proponer, type ReservaAlux } from '@/lib/alux/proponer';
 import { parsearOrden } from '@/lib/orden/parser';
 import { clasificar } from '@/lib/orden/clasificar';
 import { catalogoDePrueba } from './helpers';
@@ -11,29 +11,36 @@ const base = (o: Partial<ReservaAlux>): ReservaAlux => ({
   horaTour: '10:00', horaPickup: '08:30', pax: 2, infantes: 0, minutosMarina: 10, ...o,
 });
 
-const MINIMOS: Record<string, number> = { TULUM: 5, RM_Z1: 10, RM_Z2: 10, RM_Z3: 10, PLAYACAR: 1, PDC: 5, PTO_MORELOS: 5, CUN_ZH: 5, CUN_CENTRO: 5, PTO_JUAREZ: 5, COSTA_MUJERES: 5, PLAYA_MUJERES: 5 };
+const MINIMOS: Record<string, number> = { RM_Z1: 10, RM_Z2: 10, RM_Z3: 10 };
 
-describe('tiempo mínimo entre pick ups por zona', () => {
-  it('detecta pick ups demasiado juntos según la zona de llegada', () => {
-    const v = violacionesTiempo([{ horaPickup: '07:30', zona: 'RM_Z2' }, { horaPickup: '07:35', zona: 'RM_Z2' }, { horaPickup: '07:36', zona: 'PLAYACAR' }], MINIMOS);
-    expect(v).toEqual([{ indice: 1, zona: 'RM_Z2', minimo: 10, diferencia: 5 }]);
+describe('horario de llegada a cada parada', () => {
+  const P = { ...PARAMETROS_BASE, minEntrePickups: MINIMOS };
+  it('en Riviera Maya suma 10 min y acepta hasta 5 de retraso', () => {
+    const h = planHorario([{ horaPickup: '07:30', zona: 'RM_Z2' }, { horaPickup: '07:35', zona: 'RM_Z2' }], P);
+    expect(h.llegadas.map((m) => aHora(m!))).toEqual(['07:30', '07:40']);
+    expect(h.retrasos).toEqual([]);
+    const h2 = planHorario([{ horaPickup: '07:30', zona: 'RM_Z2' }, { horaPickup: '07:30', zona: 'RM_Z2' }], P);
+    expect(h2.retrasos).toEqual([{ indice: 1, minutos: 10 }]);
   });
-  it('Alux no junta hoteles de Riviera Maya a menos de 10 minutos', () => {
-    const p = { ...PARAMETROS_BASE, minEntrePickups: MINIMOS };
+  it('puede llegar hasta 5 min antes y recuperar tiempo', () => {
+    const h = planHorario([{ horaPickup: '07:30', zona: 'RM_Z2' }, { horaPickup: '07:45', zona: 'RM_Z2' }], P);
+    expect(aHora(h.llegadas[1]!)).toBe('07:40');
+  });
+  it('fuera de Riviera Maya, hoteles con la misma hora van juntos', () => {
+    const r = [
+      base({ id: 1, hotelId: 1, zonaClave: 'CUN_ZH', minutosMarina: 15, horaPickup: '08:30', pax: 4 }),
+      base({ id: 2, hotelId: 2, zonaClave: 'CUN_ZH', minutosMarina: 14, horaPickup: '08:30', pax: 4 }),
+      base({ id: 3, hotelId: 3, zonaClave: 'CUN_ZH', minutosMarina: 13, horaPickup: '08:30', pax: 4 }),
+    ];
+    expect(proponer(r, P)).toHaveLength(1);
+  });
+  it('en Riviera Maya separa hoteles a los que llegaría tarde', () => {
     const r = [
       base({ id: 1, hotelId: 1, zonaClave: 'RM_Z2', minutosMarina: 70, horaPickup: '07:30', pax: 4 }),
-      base({ id: 2, hotelId: 2, zonaClave: 'RM_Z2', minutosMarina: 68, horaPickup: '07:35', pax: 4 }),
+      base({ id: 2, hotelId: 2, zonaClave: 'RM_Z2', minutosMarina: 68, horaPickup: '07:30', pax: 4 }),
     ];
-    expect(proponer(r, p)).toHaveLength(2);
-    expect(proponer(r.map((x) => (x.id === 2 ? { ...x, horaPickup: '07:40' } : x)), p)).toHaveLength(1);
-  });
-  it('en Playacar se pueden encimar', () => {
-    const p = { ...PARAMETROS_BASE, minEntrePickups: MINIMOS };
-    const r = [
-      base({ id: 1, hotelId: 1, zonaClave: 'PLAYACAR', minutosMarina: 62, horaPickup: '07:45', pax: 4 }),
-      base({ id: 2, hotelId: 2, zonaClave: 'PLAYACAR', minutosMarina: 61, horaPickup: '07:46', pax: 4 }),
-    ];
-    expect(proponer(r, p)).toHaveLength(1);
+    expect(proponer(r, P)).toHaveLength(2);
+    expect(proponer(r.map((x) => (x.id === 2 ? { ...x, horaPickup: '07:35' } : x)), P)).toHaveLength(1);
   });
 });
 

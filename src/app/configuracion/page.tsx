@@ -10,6 +10,8 @@ const PARAMS: [string, string, string][] = [
   ['max_pickups_excepcion', 'Pick ups máximos como excepción', 'pick ups'],
   ['infantes_sin_lugar', 'Infantes por transporte que no ocupan lugar', 'infantes'],
   ['tolerancia_orden_min', 'Tolerancia al ordenar paradas hacia la marina', 'min'],
+  ['anticipacion_min', 'Minutos que el transporte puede llegar antes del pick up', 'min'],
+  ['tolerancia_retraso_min', 'Minutos máximos de retraso contra el pick up', 'min'],
 ];
 
 export default async function Configuracion({ searchParams }: { searchParams: { guardado?: string } }) {
@@ -39,8 +41,8 @@ export default async function Configuracion({ searchParams }: { searchParams: { 
         <div>
           <h2 className="text-lg font-bold">Tiempo mínimo entre pick ups por zona</h2>
           <p className="text-sm text-suave">
-            Minutos de traslado y acceso que debe haber, según las horas del catálogo, entre un pick up y el siguiente cuando el siguiente está en esa zona.
-            Alux no junta paradas que no lo cumplan y el tablero avisa si un cambio manual lo rompe. Déjalo vacío si la zona no tiene restricción.
+            Minutos de traslado y acceso entre un pick up y el siguiente cuando el siguiente está en esa zona. Con esto, la anticipación y la tolerancia de retraso,
+            Alux calcula a qué hora llega el transporte a cada parada y no junta paradas a las que llegaría tarde. El tablero avisa si un cambio manual lo rompe. 0 = sin tiempo mínimo.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">

@@ -31,7 +31,12 @@ export function TarjetaTransporte({
       <ol className="grid gap-2">
         {t.paradas.map((p, i) => (
           <li key={p.clave} className="grid grid-cols-[3.2rem_1fr_auto] gap-2 text-sm">
-            <span className="font-mono text-xs text-suave">{p.hora ?? '—'}</span>
+            <span className="font-mono text-xs text-suave">
+              {p.hora ?? '—'}
+              {p.llegada && p.hora && p.llegada !== p.hora && (
+                <span className={`block ${p.llegada > p.hora ? 'text-alerta' : 'text-ok'}`} title="Llegada estimada del transporte">llega {p.llegada}</span>
+              )}
+            </span>
             <div className="min-w-0">
               <div className="font-semibold">{p.hotel}</div>
               <div className="text-xs text-suave">{p.zona ?? 'Sin zona'} · {p.reservas.length} reserva{p.reservas.length === 1 ? '' : 's'}</div>

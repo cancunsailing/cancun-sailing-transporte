@@ -1,5 +1,6 @@
 import { q } from './db';
-import { lugares, violacionesTiempo } from './alux/proponer';
+import { aHora, lugares, planHorario } from './alux/proponer';
+import { cargarParametros } from './alux/generar';
 
 export type ReservaVista = {
   id: number; reserva: string; cliente: string; hotelId: number | null; hotel: string; hotelTexto: string; zona: string | null;
@@ -7,7 +8,7 @@ export type ReservaVista = {
   marina: string | null; horaTour: string | null; agencia: string; rep: string; nota: string | null; alertas: string[];
   estado: string; transporteId: number | null; orden: number;
 };
-export type Parada = { clave: string; hotel: string; zona: string | null; hora: string | null; pax: number; infantes: number; reservas: ReservaVista[] };
+export type Parada = { clave: string; hotel: string; zona: string | null; hora: string | null; llegada: string | null; pax: number; infantes: number; reservas: ReservaVista[] };
 export type TransporteVista = {
   id: number; numero: number; marinaId: number | null; marina: string | null; horaTour: string | null; bloqueado: boolean;
   origen: string; notas: string | null; transportistaId: number | null; transportista: string | null; unidadId: number | null;
@@ -16,7 +17,7 @@ export type TransporteVista = {
 
 export async function cargarOperacion(fecha: string) {
   const zonasCfg = await q<{ clave: string; nombre: string; min_entre_pickups: number | null }>('select clave, nombre, min_entre_pickups from zonas');
-  const minimos = Object.fromEntries(zonasCfg.map((z) => [z.clave, z.min_entre_pickups]));
+  const params = await cargarParametros();
   const claveZona = Object.fromEntries(zonasCfg.map((z) => [z.nombre, z.clave]));
   const [op] = await q<{ id: number; fecha: string; estado: string; archivo_nombre: string | null; importado_en: string }>(
     `select id, to_char(fecha,'YYYY-MM-DD') fecha, estado, archivo_nombre, importado_en::text from operaciones where fecha = $1`,
@@ -59,7 +60,7 @@ export async function cargarOperacion(fecha: string) {
     for (const r of rs) {
       const clave = r.hotelId ? String(r.hotelId) : r.hotelTexto;
       let p = paradas.find((x) => x.clave === clave);
-      if (!p) { p = { clave, hotel: r.hotel, zona: r.zona, hora: r.horaPickup, pax: 0, infantes: 0, reservas: [] }; paradas.push(p); }
+      if (!p) { p = { clave, hotel: r.hotel, zona: r.zona, hora: r.horaPickup, llegada: null, pax: 0, infantes: 0, reservas: [] }; paradas.push(p); }
       p.reservas.push(r);
       p.pax += r.adultos + r.menores;
       p.infantes += r.infantes;
@@ -73,10 +74,11 @@ export async function cargarOperacion(fecha: string) {
     if (l > cap) alertas.push(`Excede ${cap} lugares`);
     if (paradas.length > 4) alertas.push(`${paradas.length} pick ups`);
     if (rs.some((r) => r.marinaId !== t.marina_id || r.horaTour !== t.hora_tour)) alertas.push('Mezcla marina u horario distinto');
-    const viol = violacionesTiempo(paradas.map((p) => ({ horaPickup: p.hora, zona: p.zona ? claveZona[p.zona] : null })), minimos);
     if (paradas.some((p, i) => i > 0 && p.hora && paradas[i - 1].hora && p.hora < paradas[i - 1].hora!)) alertas.push('Orden de pick ups fuera de horario');
-    for (const x of viol.filter((x) => x.diferencia >= 0)) {
-      alertas.push(`${paradas[x.indice].hotel}: ${x.diferencia} min después del pick up anterior (mínimo ${x.minimo} en su zona)`);
+    const plan = planHorario(paradas.map((p) => ({ horaPickup: p.hora, zona: p.zona ? claveZona[p.zona] : null })), params);
+    paradas.forEach((p, i) => { const m = plan.llegadas[i]; p.llegada = m != null ? aHora(m) : null; });
+    for (const x of plan.retrasos) {
+      alertas.push(`Llega ${x.minutos} min tarde a ${paradas[x.indice].hotel} (tolerancia ${params.toleranciaRetrasoMin})`);
     }
     return {
       id: t.id as number, numero: t.numero as number, marinaId: t.marina_id as number | null, marina: t.marina as string | null,

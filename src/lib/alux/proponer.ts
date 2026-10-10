@@ -13,9 +13,9 @@
  *   infantes por transporte no, del tercero en adelante sí.
  * - Máximo ideal de 4 pick ups; un quinto se permite como excepción.
  * - Un pick up es una parada en un hotel o punto, sin importar cuántas reservas suban ahí.
- * - Entre dos pick ups consecutivos debe haber al menos el tiempo mínimo configurado para la zona
- *   a la que se llega (p. ej. Riviera Maya 10 min, Zona Hotelera 5, Playacar 1), según las horas
- *   de pick up del catálogo.
+ * - Entre dos pick ups consecutivos debe haber al menos el tiempo mínimo de la zona a la que se llega
+ *   (Riviera Maya 10 min, el resto 0). El transporte puede llegar hasta 5 min antes de la hora del
+ *   catálogo y hasta 5 min después; con eso se recupera tiempo entre paradas cercanas.
  */
 
 export type ReservaAlux = {
@@ -40,6 +40,10 @@ export type ParametrosAlux = {
   toleranciaMin: number;
   /** Minutos mínimos entre pick ups consecutivos por clave de zona (sin valor = sin restricción). */
   minEntrePickups?: Record<string, number | null | undefined>;
+  /** Minutos que el transporte puede llegar antes de la hora de pick up del catálogo. */
+  anticipacionMin?: number;
+  /** Minutos máximos de retraso contra la hora de pick up del catálogo. */
+  toleranciaRetrasoMin?: number;
 };
 
 export const PARAMETROS_BASE: ParametrosAlux = {
@@ -48,6 +52,8 @@ export const PARAMETROS_BASE: ParametrosAlux = {
   maxPickupsExcepcion: 5,
   infantesSinLugar: 2,
   toleranciaMin: 3,
+  anticipacionMin: 5,
+  toleranciaRetrasoMin: 5,
 };
 
 export type TransportePropuesto = {
@@ -90,22 +96,32 @@ const PERMITIDOS: Record<string, string[][]> = {
 
 const aMin = (h: string) => (/^\d{2}:\d{2}$/.test(h) ? Number(h.slice(0, 2)) * 60 + Number(h.slice(3)) : null);
 
-/** Revisa que cada pick up quede al menos el tiempo mínimo de su zona después del anterior. */
-export function violacionesTiempo(
+/**
+ * Calcula a qué hora llegaría el transporte a cada parada.
+ * - Puede llegar hasta `anticipacion` minutos antes de la hora del catálogo.
+ * - Entre una parada y la siguiente debe pasar al menos el mínimo de la zona a la que llega.
+ * - Si llega más de `tolerancia` minutos después de la hora del catálogo, la parada queda fuera de tiempo.
+ */
+export function planHorario(
   paradas: { horaPickup: string | null; zona: string | null }[],
-  minimos: Record<string, number | null | undefined> = {},
-): { indice: number; zona: string; minimo: number; diferencia: number }[] {
-  const out: { indice: number; zona: string; minimo: number; diferencia: number }[] = [];
-  for (let i = 1; i < paradas.length; i++) {
-    const z = paradas[i].zona;
-    const m = z ? minimos[z] : null;
-    if (m == null || !z) continue;
-    const a = aMin(paradas[i - 1].horaPickup ?? ''), b = aMin(paradas[i].horaPickup ?? '');
-    if (a == null || b == null) continue;
-    if (b - a < m) out.push({ indice: i, zona: z, minimo: m, diferencia: b - a });
-  }
-  return out;
+  p: Pick<ParametrosAlux, 'minEntrePickups' | 'anticipacionMin' | 'toleranciaRetrasoMin'>,
+): { llegadas: (number | null)[]; retrasos: { indice: number; minutos: number }[] } {
+  const llegadas: (number | null)[] = [];
+  const retrasos: { indice: number; minutos: number }[] = [];
+  let prev: number | null = null;
+  paradas.forEach((x, i) => {
+    const cat = aMin(x.horaPickup ?? '');
+    if (cat == null) { llegadas.push(prev); return; }
+    const min = (x.zona && p.minEntrePickups?.[x.zona]) || 0;
+    const llegada: number = prev == null ? cat : Math.max(cat - (p.anticipacionMin ?? 5), prev + min);
+    llegadas.push(llegada);
+    if (llegada - cat > (p.toleranciaRetrasoMin ?? 5)) retrasos.push({ indice: i, minutos: llegada - cat });
+    prev = llegada;
+  });
+  return { llegadas, retrasos };
 }
+
+export const aHora = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 
 export function lugares(pax: number, infantes: number, p: ParametrosAlux = PARAMETROS_BASE): number {
   return pax + Math.max(0, infantes - p.infantesSinLugar);
@@ -198,7 +214,7 @@ export function proponer(reservas: ReservaAlux[], p: ParametrosAlux = PARAMETROS
       if (tramos.has('Sin zona')) return false;
       if (permitidos && !permitidos.some((ok) => [...tramos].every((t) => ok.includes(t)))) return false;
       const sec = ordenar([...v.paradas, s]);
-      return avanza(sec) && violacionesTiempo(sec, p.minEntrePickups).length === 0;
+      return avanza(sec) && planHorario(sec, p).retrasos.length === 0;
     };
     const agregar = (v: Van, s: Parada) => {
       v.paradas = ordenar([...v.paradas, s]);

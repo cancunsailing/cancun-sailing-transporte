@@ -12,6 +12,8 @@ export async function cargarParametros(): Promise<ParametrosAlux> {
     infantesSinLugar: v.infantes_sin_lugar ?? PARAMETROS_BASE.infantesSinLugar,
     toleranciaMin: v.tolerancia_orden_min ?? PARAMETROS_BASE.toleranciaMin,
     minEntrePickups: Object.fromEntries(zonas.map((z) => [z.clave, z.min_entre_pickups])),
+    anticipacionMin: v.anticipacion_min ?? PARAMETROS_BASE.anticipacionMin,
+    toleranciaRetrasoMin: v.tolerancia_retraso_min ?? PARAMETROS_BASE.toleranciaRetrasoMin,
   };
 }
 
