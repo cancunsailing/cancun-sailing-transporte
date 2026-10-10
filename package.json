@@ -1,0 +1,44 @@
+{
+  "name": "cs-transporte",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma de logística de transporte de Cancun Sailing (operación de ida, Alux)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:reset": "tsx scripts/migrate.ts --reset && tsx scripts/seed.ts",
+    "user:create": "tsx scripts/create-user.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "2.4.3",
+    "jose": "5.9.6",
+    "next": "14.2.35",
+    "node-html-parser": "6.1.13",
+    "pdf-lib": "1.17.1",
+    "pg": "8.13.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "2.4.6",
+    "@types/node": "20.17.6",
+    "@types/pg": "8.11.10",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "autoprefixer": "10.4.20",
+    "csv-parse": "5.5.6",
+    "dotenv": "16.4.5",
+    "postcss": "8.4.49",
+    "tailwindcss": "3.4.14",
+    "tsx": "4.19.2",
+    "typescript": "5.6.3",
+    "vitest": "2.1.5"
+  }
+}

@@ -1,0 +1,17 @@
+<table style="font-family:Arial; font-size:12px;">
+<thead>
+<tr><th colspan="14">&nbsp;</th></tr>
+<tr><th colspan="7">Cancun Sailing Orden de Servicio: FECHA: <b>Viernes, 09 de Octubre de 2026 </b></th></tr>
+<tr><th>Cliente</th><th>Cupón</th><th>Hab</th><th>Hotel</th><th>Reserva</th><th>Hora</th><th>Adts</th><th>Mnrs</th><th>Inf</th><th>Excurción</th><th>Rep</th><th>Agencia</th><th>Preferencia</th><th>Comentario</th></tr>
+</thead>
+<tbody>
+<tr><td>PASAJERO UNO</td><td>1</td><td></td><td>RIU VENTURA</td><td>CANPLE-A1-091026</td><td>08:30</td><td>2</td><td>0</td><td>0</td><td>Plus Experience ( 10:00 )</td><td>REP</td><td>AGENCIA A</td><td>AGENCIAS</td><td>Riu Ventura - All Inclusive, CancÃºn, MÃ©xico</td></tr>
+<tr><td>PASAJERO DOS</td><td>2</td><td></td><td>LLEGAN DIRECTO</td><td>CANPLE-A2-091026</td><td></td><td>3</td><td>0</td><td>0</td><td>Plus Experience ( 10:00 )</td><td>REP</td><td>AGENCIA B</td><td>DIRECTOS</td><td></td></tr>
+<tr><td>PASAJERO TRES</td><td>3</td><td></td><td></td><td>CANPLE-A3-091026</td><td></td><td>2</td><td>0</td><td>0</td><td>Plus Experience ( 10:00 )</td><td>ONLINE</td><td>Viator</td><td>WEB</td><td></td></tr>
+<tr><td>PASAJERO CUATRO</td><td>4</td><td></td><td>DREAMS SAPPHIRE// NOW SAPPHIRE</td><td>CANPLE-A4-091026</td><td>11:10</td><td>4</td><td>0</td><td>0</td><td>Plus Experience ( 13:00 )</td><td>REP</td><td>AGENCIA C</td><td>AGENCIAS</td><td>PUP EN LA PLUMA -|- NO PAGA NADA OK AGENCIA</td></tr>
+<tr><td>PASAJERO CINCO</td><td>5</td><td></td><td>SLS PLAYA MUJERES</td><td>CANPRV-A5-091026</td><td>10:30</td><td>2</td><td>0</td><td>0</td><td>Privilege Experience ( 12:00 )</td><td>REP</td><td>AGENCIA D</td><td>AGENCIAS</td><td>LLEGAN POR SU CUENTA Y SOLO SE LES DA EL REGRESO</td></tr>
+<tr><td>CLIENTE CHARTER</td><td>6</td><td></td><td>PALLADIUM COSTA TRS</td><td>CANCHT-A6-091026</td><td>00:00</td><td>50</td><td>0</td><td>0</td><td>Charter</td><td>REP</td><td>AGENCIA E</td><td>AGENCIAS</td><td></td></tr>
+<tr><td>PASAJERO SIETE</td><td>7</td><td></td><td>HOTEL INVENTADO</td><td>CANPRV-A7-091026</td><td>08:00</td><td>2</td><td>1</td><td>3</td><td>Privilege Experience ( 10:00 )</td><td>REP</td><td>AGENCIA F</td><td>AGENCIAS</td><td></td></tr>
+<tr><td></td><td></td><td></td><td></td><td></td><td></td><td>65</td><td>1</td><td>3</td><td></td><td></td><td></td><td></td><td></td></tr>
+</tbody>
+</table>
