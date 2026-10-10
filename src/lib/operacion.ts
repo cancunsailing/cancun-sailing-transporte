@@ -1,5 +1,5 @@
 import { q } from './db';
-import { lugares } from './alux/proponer';
+import { lugares, violacionesTiempo } from './alux/proponer';
 
 export type ReservaVista = {
   id: number; reserva: string; cliente: string; hotelId: number | null; hotel: string; hotelTexto: string; zona: string | null;
@@ -15,6 +15,9 @@ export type TransporteVista = {
 };
 
 export async function cargarOperacion(fecha: string) {
+  const zonasCfg = await q<{ clave: string; nombre: string; min_entre_pickups: number | null }>('select clave, nombre, min_entre_pickups from zonas');
+  const minimos = Object.fromEntries(zonasCfg.map((z) => [z.clave, z.min_entre_pickups]));
+  const claveZona = Object.fromEntries(zonasCfg.map((z) => [z.nombre, z.clave]));
   const [op] = await q<{ id: number; fecha: string; estado: string; archivo_nombre: string | null; importado_en: string }>(
     `select id, to_char(fecha,'YYYY-MM-DD') fecha, estado, archivo_nombre, importado_en::text from operaciones where fecha = $1`,
     [fecha],
@@ -70,9 +73,10 @@ export async function cargarOperacion(fecha: string) {
     if (l > cap) alertas.push(`Excede ${cap} lugares`);
     if (paradas.length > 4) alertas.push(`${paradas.length} pick ups`);
     if (rs.some((r) => r.marinaId !== t.marina_id || r.horaTour !== t.hora_tour)) alertas.push('Mezcla marina u horario distinto');
-    if (paradas.length > 1) for (let i = 1; i < paradas.length; i++) {
-      const a = paradas[i - 1].hora, b = paradas[i].hora;
-      if (a && b && b < a) { alertas.push('Orden de pick ups fuera de horario'); break; }
+    const viol = violacionesTiempo(paradas.map((p) => ({ horaPickup: p.hora, zona: p.zona ? claveZona[p.zona] : null })), minimos);
+    if (paradas.some((p, i) => i > 0 && p.hora && paradas[i - 1].hora && p.hora < paradas[i - 1].hora!)) alertas.push('Orden de pick ups fuera de horario');
+    for (const x of viol.filter((x) => x.diferencia >= 0)) {
+      alertas.push(`${paradas[x.indice].hotel}: ${x.diferencia} min después del pick up anterior (mínimo ${x.minimo} en su zona)`);
     }
     return {
       id: t.id as number, numero: t.numero as number, marinaId: t.marina_id as number | null, marina: t.marina as string | null,

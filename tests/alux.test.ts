@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { lugares, proponer, type ReservaAlux } from '@/lib/alux/proponer';
+import { PARAMETROS_BASE, lugares, proponer, violacionesTiempo, type ReservaAlux } from '@/lib/alux/proponer';
 import { parsearOrden } from '@/lib/orden/parser';
 import { clasificar } from '@/lib/orden/clasificar';
 import { catalogoDePrueba } from './helpers';
@@ -9,6 +9,32 @@ import { catalogoDePrueba } from './helpers';
 const base = (o: Partial<ReservaAlux>): ReservaAlux => ({
   id: 1, hotelId: 1, hotelNombre: 'H', zonaClave: 'CUN_ZH', marinaId: 1, marinaNombre: 'Las Perlas',
   horaTour: '10:00', horaPickup: '08:30', pax: 2, infantes: 0, minutosMarina: 10, ...o,
+});
+
+const MINIMOS = { RM_Z1: 10, RM_Z2: 10, RM_Z3: 10, CUN_ZH: 5, PLAYACAR: 1 };
+
+describe('tiempo mínimo entre pick ups por zona', () => {
+  it('detecta pick ups demasiado juntos según la zona de llegada', () => {
+    const v = violacionesTiempo([{ horaPickup: '07:30', zona: 'RM_Z2' }, { horaPickup: '07:35', zona: 'RM_Z2' }, { horaPickup: '07:36', zona: 'PLAYACAR' }], MINIMOS);
+    expect(v).toEqual([{ indice: 1, zona: 'RM_Z2', minimo: 10, diferencia: 5 }]);
+  });
+  it('Alux no junta hoteles de Riviera Maya a menos de 10 minutos', () => {
+    const p = { ...PARAMETROS_BASE, minEntrePickups: MINIMOS };
+    const r = [
+      base({ id: 1, hotelId: 1, zonaClave: 'RM_Z2', minutosMarina: 70, horaPickup: '07:30', pax: 4 }),
+      base({ id: 2, hotelId: 2, zonaClave: 'RM_Z2', minutosMarina: 68, horaPickup: '07:35', pax: 4 }),
+    ];
+    expect(proponer(r, p)).toHaveLength(2);
+    expect(proponer(r.map((x) => (x.id === 2 ? { ...x, horaPickup: '07:40' } : x)), p)).toHaveLength(1);
+  });
+  it('en Playacar se pueden encimar', () => {
+    const p = { ...PARAMETROS_BASE, minEntrePickups: MINIMOS };
+    const r = [
+      base({ id: 1, hotelId: 1, zonaClave: 'PLAYACAR', minutosMarina: 62, horaPickup: '07:45', pax: 4 }),
+      base({ id: 2, hotelId: 2, zonaClave: 'PLAYACAR', minutosMarina: 61, horaPickup: '07:46', pax: 4 }),
+    ];
+    expect(proponer(r, p)).toHaveLength(1);
+  });
 });
 
 describe('reglas de Alux', () => {
@@ -62,10 +88,10 @@ describe.skipIf(!fs.existsSync(real))('propuesta con la orden real', () => {
         horaTour: x.horaTour!, horaPickup: x.horaPickup, pax: x.adultos + x.menores, infantes: x.infantes, minutosMarina: h.minutos[m],
       };
     });
-    const t = proponer(input);
+    const t = proponer(input, { ...PARAMETROS_BASE, minEntrePickups: MINIMOS });
     expect(new Set(t.flatMap((x) => x.reservaIds)).size).toBe(input.length);
     expect(t.every((x) => x.lugares <= 20 && x.pickups <= 5)).toBe(true);
-    expect(t.length).toBeLessThanOrEqual(48);
+    expect(t.length).toBeLessThanOrEqual(55);
     console.log(`Transportes propuestos: ${t.length}`);
   });
 });

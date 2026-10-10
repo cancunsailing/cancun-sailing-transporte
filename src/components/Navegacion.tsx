@@ -10,6 +10,7 @@ export function Navegacion({ sesion }: { sesion: Sesion }) {
     { href: '/catalogos/productos', txt: 'Productos', ok: puede(sesion, PERMISOS.verCatalogos) },
     { href: '/alux', txt: 'Aprendizaje de Alux', ok: puede(sesion, PERMISOS.revisarReglas) },
     { href: '/usuarios', txt: 'Usuarios', ok: puede(sesion, PERMISOS.administrarUsuarios) },
+    { href: '/configuracion', txt: 'Configuración', ok: puede(sesion, PERMISOS.editarCatalogos) },
   ].filter((l) => l.ok);
   return (
     <header className="sticky top-0 z-20 border-b border-linea bg-white/95 backdrop-blur">

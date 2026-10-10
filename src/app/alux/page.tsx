@@ -11,6 +11,7 @@ const TIPO: Record<string, string> = {
   propuesta: 'Alux armó la propuesta',
   importacion: 'Importó la orden',
   aprobar: 'Aprobó la operación',
+  configuracion: 'Cambió la configuración',
 };
 
 export default async function Aprendizaje() {

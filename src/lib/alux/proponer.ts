@@ -13,6 +13,9 @@
  *   infantes por transporte no, del tercero en adelante sí.
  * - Máximo ideal de 4 pick ups; un quinto se permite como excepción.
  * - Un pick up es una parada en un hotel o punto, sin importar cuántas reservas suban ahí.
+ * - Entre dos pick ups consecutivos debe haber al menos el tiempo mínimo configurado para la zona
+ *   a la que se llega (p. ej. Riviera Maya 10 min, Zona Hotelera 5, Playacar 1), según las horas
+ *   de pick up del catálogo.
  */
 
 export type ReservaAlux = {
@@ -35,6 +38,8 @@ export type ParametrosAlux = {
   maxPickupsExcepcion: number;
   infantesSinLugar: number;
   toleranciaMin: number;
+  /** Minutos mínimos entre pick ups consecutivos por clave de zona (sin valor = sin restricción). */
+  minEntrePickups?: Record<string, number | null | undefined>;
 };
 
 export const PARAMETROS_BASE: ParametrosAlux = {
@@ -63,6 +68,7 @@ type Parada = {
   dm: number;
   horaPickup: string;
   tramo: string;
+  zona: string | null;
 };
 
 type Van = { paradas: Parada[]; pax: number; infantes: number };
@@ -81,6 +87,25 @@ const PERMITIDOS: Record<string, string[][]> = {
   'Las Perlas': [['Sur', 'Cancún'], ['Norte', 'Cancún']],
   'Punta Norte': [['Sur', 'Cancún'], ['ZH', 'Cancún'], ['Norte']],
 };
+
+const aMin = (h: string) => (/^\d{2}:\d{2}$/.test(h) ? Number(h.slice(0, 2)) * 60 + Number(h.slice(3)) : null);
+
+/** Revisa que cada pick up quede al menos el tiempo mínimo de su zona después del anterior. */
+export function violacionesTiempo(
+  paradas: { horaPickup: string | null; zona: string | null }[],
+  minimos: Record<string, number | null | undefined> = {},
+): { indice: number; zona: string; minimo: number; diferencia: number }[] {
+  const out: { indice: number; zona: string; minimo: number; diferencia: number }[] = [];
+  for (let i = 1; i < paradas.length; i++) {
+    const z = paradas[i].zona;
+    const m = z ? minimos[z] : null;
+    if (m == null || !z) continue;
+    const a = aMin(paradas[i - 1].horaPickup ?? ''), b = aMin(paradas[i].horaPickup ?? '');
+    if (a == null || b == null) continue;
+    if (b - a < m) out.push({ indice: i, zona: z, minimo: m, diferencia: b - a });
+  }
+  return out;
+}
 
 export function lugares(pax: number, infantes: number, p: ParametrosAlux = PARAMETROS_BASE): number {
   return pax + Math.max(0, infantes - p.infantesSinLugar);
@@ -120,6 +145,7 @@ export function proponer(reservas: ReservaAlux[], p: ParametrosAlux = PARAMETROS
       dm: list[0].minutosMarina ?? 0,
       horaPickup: list.map((r) => r.horaPickup ?? '99:99').sort()[0],
       tramo: tramo(marina, list[0].zonaClave),
+      zona: list[0].zonaClave,
     }));
     paradas.sort((a, b) => b.dm - a.dm || a.horaPickup.localeCompare(b.horaPickup));
 
@@ -161,16 +187,19 @@ export function proponer(reservas: ReservaAlux[], p: ParametrosAlux = PARAMETROS
     }
     paradas = pendientes;
 
+    const ordenar = (ps: Parada[]) => [...ps].sort((a, b) => b.dm - a.dm || a.horaPickup.localeCompare(b.horaPickup));
     const cabe = (v: Van, s: Parada, max: number) =>
       lugares(v.pax + s.pax, v.infantes + s.infantes, p) <= p.capacidad && v.paradas.length < max;
     const compatible = (v: Van, s: Parada) => {
       const tramos = new Set([...v.paradas.map((x) => x.tramo), s.tramo]);
       if (tramos.has('Sin zona')) return false;
       if (permitidos && !permitidos.some((ok) => [...tramos].every((t) => ok.includes(t)))) return false;
-      return s.dm <= v.paradas[v.paradas.length - 1].dm + p.toleranciaMin;
+      if (s.dm > v.paradas[v.paradas.length - 1].dm + p.toleranciaMin) return false;
+      const sec = ordenar([...v.paradas, s]);
+      return violacionesTiempo(sec, p.minEntrePickups).length === 0;
     };
     const agregar = (v: Van, s: Parada) => {
-      v.paradas.push(s);
+      v.paradas = ordenar([...v.paradas, s]);
       v.pax += s.pax;
       v.infantes += s.infantes;
     };
@@ -194,7 +223,7 @@ export function proponer(reservas: ReservaAlux[], p: ParametrosAlux = PARAMETROS
         if (ops.length) {
           const destino = ops.reduce((a, b) => (b.pax > a.pax ? b : a));
           agregar(destino, s);
-          destino.paradas.sort((a, b) => b.dm - a.dm || a.horaPickup.localeCompare(b.horaPickup));
+          destino.paradas = ordenar(destino.paradas);
           vans.splice(vans.indexOf(chica), 1);
           cambio = true;
           break;

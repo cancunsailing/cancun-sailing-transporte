@@ -4,12 +4,14 @@ import { PARAMETROS_BASE, proponer, type ParametrosAlux, type ReservaAlux } from
 export async function cargarParametros(): Promise<ParametrosAlux> {
   const rows = await q<{ clave: string; valor: string }>('select clave, valor from parametros');
   const v = Object.fromEntries(rows.map((r) => [r.clave, Number(r.valor)]));
+  const zonas = await q<{ clave: string; min_entre_pickups: number | null }>('select clave, min_entre_pickups from zonas');
   return {
     capacidad: v.capacidad_bloque ?? PARAMETROS_BASE.capacidad,
     maxPickups: v.max_pickups ?? PARAMETROS_BASE.maxPickups,
     maxPickupsExcepcion: v.max_pickups_excepcion ?? PARAMETROS_BASE.maxPickupsExcepcion,
     infantesSinLugar: v.infantes_sin_lugar ?? PARAMETROS_BASE.infantesSinLugar,
     toleranciaMin: v.tolerancia_orden_min ?? PARAMETROS_BASE.toleranciaMin,
+    minEntrePickups: Object.fromEntries(zonas.map((z) => [z.clave, z.min_entre_pickups])),
   };
 }
 
