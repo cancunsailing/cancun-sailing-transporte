@@ -1,0 +1,13 @@
+{
+  "name": "Transporte · Cancun Sailing",
+  "short_name": "Transporte CS",
+  "description": "Logística de transporte de pasajeros de Cancun Sailing",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f5f6",
+  "theme_color": "#14232b",
+  "lang": "es",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { @apply bg-fondo text-tinta antialiased; font-size: 15px; }
+h1, h2, h3 { text-wrap: balance; }
+.tabular { font-variant-numeric: tabular-nums; }
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-linea bg-white px-3 py-1.5 text-sm font-semibold text-tinta hover:bg-fondo focus-visible:outline focus-visible:outline-2 focus-visible:outline-perlas disabled:opacity-50; }
+  .btn-primario { @apply btn border-tinta bg-tinta text-white hover:bg-tinta/90; }
+  .btn-peligro { @apply btn border-alerta text-alerta hover:bg-alerta-soft; }
+  .campo { @apply w-full rounded-md border border-linea bg-white px-2.5 py-1.5 text-sm focus:border-perlas focus:outline-none focus:ring-1 focus:ring-perlas; }
+  .etiqueta { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-suave; }
+  .tarjeta { @apply rounded-md border border-linea bg-white; }
+  .chip { @apply inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold; }
+  .tabla { @apply w-full border-collapse text-sm; }
+  .tabla th { @apply border-b border-linea px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-suave; }
+  .tabla td { @apply border-b border-linea px-3 py-2 align-top; }
+}
