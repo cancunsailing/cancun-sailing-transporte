@@ -11,7 +11,7 @@ const base = (o: Partial<ReservaAlux>): ReservaAlux => ({
   horaTour: '10:00', horaPickup: '08:30', pax: 2, infantes: 0, minutosMarina: 10, ...o,
 });
 
-const MINIMOS = { RM_Z1: 10, RM_Z2: 10, RM_Z3: 10, CUN_ZH: 5, PLAYACAR: 1 };
+const MINIMOS: Record<string, number> = { TULUM: 5, RM_Z1: 10, RM_Z2: 10, RM_Z3: 10, PLAYACAR: 1, PDC: 5, PTO_MORELOS: 5, CUN_ZH: 5, CUN_CENTRO: 5, PTO_JUAREZ: 5, COSTA_MUJERES: 5, PLAYA_MUJERES: 5 };
 
 describe('tiempo mínimo entre pick ups por zona', () => {
   it('detecta pick ups demasiado juntos según la zona de llegada', () => {

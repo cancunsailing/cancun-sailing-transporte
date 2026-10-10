@@ -187,16 +187,18 @@ export function proponer(reservas: ReservaAlux[], p: ParametrosAlux = PARAMETROS
     }
     paradas = pendientes;
 
-    const ordenar = (ps: Parada[]) => [...ps].sort((a, b) => b.dm - a.dm || a.horaPickup.localeCompare(b.horaPickup));
+    // Dentro de un transporte las paradas van en el orden de sus horas de pick up del catálogo
+    // (son fijas); la distancia a la marina decide qué paradas quedan de paso.
+    const ordenar = (ps: Parada[]) => [...ps].sort((a, b) => a.horaPickup.localeCompare(b.horaPickup) || b.dm - a.dm);
+    const avanza = (sec: Parada[]) => sec.every((x, i) => i === 0 || x.dm <= sec[i - 1].dm + p.toleranciaMin);
     const cabe = (v: Van, s: Parada, max: number) =>
       lugares(v.pax + s.pax, v.infantes + s.infantes, p) <= p.capacidad && v.paradas.length < max;
     const compatible = (v: Van, s: Parada) => {
       const tramos = new Set([...v.paradas.map((x) => x.tramo), s.tramo]);
       if (tramos.has('Sin zona')) return false;
       if (permitidos && !permitidos.some((ok) => [...tramos].every((t) => ok.includes(t)))) return false;
-      if (s.dm > v.paradas[v.paradas.length - 1].dm + p.toleranciaMin) return false;
       const sec = ordenar([...v.paradas, s]);
-      return violacionesTiempo(sec, p.minEntrePickups).length === 0;
+      return avanza(sec) && violacionesTiempo(sec, p.minEntrePickups).length === 0;
     };
     const agregar = (v: Van, s: Parada) => {
       v.paradas = ordenar([...v.paradas, s]);
