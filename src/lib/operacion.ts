@@ -3,7 +3,7 @@ import { aHora, lugares, planHorario } from './alux/proponer';
 import { cargarParametros } from './alux/generar';
 
 export type ReservaVista = {
-  id: number; reserva: string; cliente: string; hotelId: number | null; hotel: string; hotelTexto: string; zona: string | null;
+  id: number; reserva: string; cliente: string; cupon: string | null; hab: string | null; hotelId: number | null; hotel: string; hotelTexto: string; zona: string | null;
   horaPickup: string | null; adultos: number; menores: number; infantes: number; producto: string; marinaId: number | null;
   marina: string | null; horaTour: string | null; agencia: string; rep: string; nota: string | null; alertas: string[];
   estado: string; transporteId: number | null; orden: number;
@@ -26,7 +26,7 @@ export async function cargarOperacion(fecha: string) {
   if (!op) return null;
   const reservas = (
     await q<Record<string, unknown>>(
-      `select r.id, r.reserva, r.cliente, r.hotel_id, coalesce(h.nombre, r.hotel_texto) hotel, r.hotel_texto, z.nombre zona,
+      `select r.id, r.reserva, r.cliente, r.cupon, r.hab, r.hotel_id, coalesce(h.nombre, r.hotel_texto) hotel, r.hotel_texto, z.nombre zona,
               to_char(r.hora_pickup,'HH24:MI') hora_pickup, r.adultos, r.menores, r.infantes,
               coalesce(p.nombre || ' ' || to_char(p.hora_salida,'HH24:MI'), r.excursion_texto) producto,
               r.marina_id, m.nombre marina, to_char(r.hora_tour,'HH24:MI') hora_tour, r.agencia, r.rep, r.nota_transporte,
@@ -39,7 +39,7 @@ export async function cargarOperacion(fecha: string) {
       [op.id],
     )
   ).map((r) => ({
-    id: r.id as number, reserva: r.reserva as string, cliente: r.cliente as string, hotelId: r.hotel_id as number | null,
+    id: r.id as number, reserva: r.reserva as string, cliente: r.cliente as string, cupon: (r.cupon as string) || null, hab: (r.hab as string) || null, hotelId: r.hotel_id as number | null,
     hotel: r.hotel as string, hotelTexto: r.hotel_texto as string, zona: r.zona as string | null, horaPickup: r.hora_pickup as string | null,
     adultos: r.adultos as number, menores: r.menores as number, infantes: r.infantes as number, producto: r.producto as string,
     marinaId: r.marina_id as number | null, marina: r.marina as string | null, horaTour: r.hora_tour as string | null,

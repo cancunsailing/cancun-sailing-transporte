@@ -7,7 +7,7 @@ export type Manifiesto = {
   id: number; fecha: string; numero: number; marina: string | null; horaTour: string | null; transportista: string | null;
   unidad: string | null; operador: string | null; telefonoOperador: string | null; lugares: number; pax: number; infantes: number;
   paradas: { hora: string | null; hotel: string; zona: string | null; pax: number; infantes: number; nota: string | null;
-    reservas: { cliente: string; reserva: string; producto: string; agencia: string; pax: number; infantes: number }[] }[];
+    reservas: { cliente: string; reserva: string; cupon: string | null; hab: string | null; rep: string | null; producto: string; agencia: string; pax: number; infantes: number }[] }[];
 };
 
 /** Carga el manifiesto de un transporte. Un transportista solo puede ver los suyos. */
@@ -23,7 +23,7 @@ export async function cargarManifiesto(id: number, s: Sesion): Promise<Manifiest
   if (!t) return null;
   if (s.rol === 'transportista' && t.transportista_id !== s.transportistaId) return null;
   const rs = await q<Record<string, unknown>>(
-    `select r.cliente, r.reserva, coalesce(h.nombre, r.hotel_texto) hotel, coalesce(r.hotel_id::text, r.hotel_texto) clave, z.nombre zona,
+    `select r.cliente, r.reserva, r.cupon, r.hab, r.rep, coalesce(h.nombre, r.hotel_texto) hotel, coalesce(r.hotel_id::text, r.hotel_texto) clave, z.nombre zona,
             to_char(r.hora_pickup,'HH24:MI') hora, r.adultos + r.menores pax, r.infantes, r.agencia, r.nota_transporte,
             coalesce(p.nombre || ' ' || to_char(p.hora_salida,'HH24:MI'), r.excursion_texto) producto
      from transporte_reservas tr join reservas r on r.id = tr.reserva_id left join hoteles h on h.id = r.hotel_id
@@ -40,7 +40,7 @@ export async function cargarManifiesto(id: number, s: Sesion): Promise<Manifiest
     p.pax += Number(r.pax); p.infantes += Number(r.infantes);
     if (r.hora && (!p.hora || (r.hora as string) < p.hora)) p.hora = r.hora as string;
     if (r.nota_transporte) p.nota = [p.nota, r.nota_transporte].filter(Boolean).join(' · ');
-    p.reservas.push({ cliente: r.cliente as string, reserva: r.reserva as string, producto: r.producto as string, agencia: r.agencia as string, pax: Number(r.pax), infantes: Number(r.infantes) });
+    p.reservas.push({ cliente: r.cliente as string, reserva: r.reserva as string, cupon: (r.cupon as string) || null, hab: (r.hab as string) || null, rep: (r.rep as string) || null, producto: r.producto as string, agencia: r.agencia as string, pax: Number(r.pax), infantes: Number(r.infantes) });
   }
   const pax = paradas.reduce((a, p) => a + p.pax, 0);
   const infantes = paradas.reduce((a, p) => a + p.infantes, 0);
@@ -56,7 +56,7 @@ export function textoWhatsApp(m: Manifiesto): string {
   const l: string[] = [];
   l.push(`*Cancun Sailing · Transporte ${m.numero}*`);
   l.push(`${fechaLarga(m.fecha)}`);
-  l.push(`Destino: Marina ${m.marina ?? '—'} · Tour ${m.horaTour ?? '—'}`);
+  l.push(`Llevar a: Marina ${m.marina ?? '—'} · Tour ${m.horaTour ?? '—'}`);
   if (m.transportista || m.unidad) l.push(`Unidad: ${[m.transportista, m.unidad].filter(Boolean).join(' · ')}`);
   if (m.operador) l.push(`Operador: ${m.operador}`);
   l.push(`Total: ${m.pax} pax${m.infantes ? ` + ${m.infantes} infantes` : ''}`);
@@ -64,7 +64,10 @@ export function textoWhatsApp(m: Manifiesto): string {
   m.paradas.forEach((p, i) => {
     l.push(`*${i + 1}. ${p.hora ?? '—'} · ${p.hotel}* (${p.pax} pax${p.infantes ? ` + ${p.infantes} inf` : ''})`);
     if (p.nota) l.push(`   ⚠ ${p.nota}`);
-    for (const r of p.reservas) l.push(`   - ${r.cliente} · ${r.pax}${r.infantes ? `+${r.infantes}` : ''} · ${r.producto} · ${r.reserva}`);
+    for (const r of p.reservas) {
+      const extra = [r.cupon && `cupón ${r.cupon}`, r.hab && `hab ${r.hab}`, r.agencia, r.rep && `rep ${r.rep}`].filter(Boolean).join(' · ');
+      l.push(`   - ${r.cliente} · ${r.pax}${r.infantes ? `+${r.infantes}` : ''} pax · ${r.producto}${extra ? ` · ${extra}` : ''}`);
+    }
   });
   return l.join('\n');
 }

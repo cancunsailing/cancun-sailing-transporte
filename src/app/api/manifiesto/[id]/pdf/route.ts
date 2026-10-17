@@ -28,7 +28,7 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
     y -= size + 5;
   };
   linea(`Cancun Sailing · Transporte ${m.numero}`, 18, bold);
-  linea(`${fechaLarga(m.fecha)} · Marina ${m.marina ?? '-'} · Tour ${m.horaTour ?? '-'}`, 11, reg, suave);
+  linea(`${fechaLarga(m.fecha)} · Llevar a Marina ${m.marina ?? '-'} · Tour ${m.horaTour ?? '-'}`, 11, reg, suave);
   y -= 4;
   linea(`Transportista: ${m.transportista ?? 'Por asignar'}    Unidad: ${m.unidad ?? 'Por asignar'}    Operador: ${m.operador ?? 'Por asignar'}`, 10);
   linea(`Pasajeros: ${m.pax}${m.infantes ? ` + ${m.infantes} infantes` : ''}    Pick ups: ${m.paradas.length}`, 10, bold);
@@ -40,7 +40,8 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
     if (p.zona) linea(p.zona, 9, reg, suave, M + 18);
     if (p.nota) linea(`Nota: ${p.nota}`, 9, bold, alerta, M + 18);
     for (const r of p.reservas) {
-      linea(`${r.cliente}  ·  ${r.pax}${r.infantes ? `+${r.infantes}` : ''} pax  ·  ${r.producto}  ·  ${r.reserva}  ·  ${r.agencia}`, 9, reg, tinta, M + 18);
+      linea(`${r.cliente}  ·  ${r.pax}${r.infantes ? `+${r.infantes}` : ''} pax  ·  ${r.producto}`, 9, bold, tinta, M + 18);
+      linea([r.cupon && `Cupón ${r.cupon}`, r.hab && `Hab ${r.hab}`, r.agencia, r.rep && `Rep ${r.rep}`, r.reserva].filter(Boolean).join('  ·  '), 8, reg, suave, M + 30);
     }
     y -= 4;
   });

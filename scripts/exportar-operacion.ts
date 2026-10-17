@@ -17,7 +17,8 @@ async function main() {
       unidad: t.lugares <= 13 ? 'Van 13' : t.lugares <= 15 ? 'Van 15' : 'Van 20', madi: zonas.every((z) => MADI.has(z)), zonas,
       alertas: t.alertas, productos: [...new Set(t.paradas.flatMap((p) => p.reservas.map((r) => r.producto.replace(/ \d\d:\d\d$/, ''))))],
       paradas: t.paradas.map((p) => ({ hotel: p.hotel, hora: p.hora, llegada: p.llegada, zona: p.zona ?? 'Sin zona', pax: p.pax, inf: p.infantes, res: p.reservas.length,
-        nota: [...new Set(p.reservas.map((r) => r.nota).filter(Boolean))].join(' · '), reservas: p.reservas.map((r) => r.reserva) })),
+        nota: [...new Set(p.reservas.map((r) => r.nota).filter(Boolean))].join(' · '), reservas: p.reservas.map((r) => r.reserva),
+        clientes: p.reservas.map((r) => ({ cliente: r.cliente, cupon: r.cupon, hab: r.hab, pax: r.adultos + r.menores, inf: r.infantes, producto: r.producto, agencia: r.agencia, reserva: r.reserva })) })),
     };
   });
   const porEstado = Object.fromEntries((await q<{ estado: string; n: number }>(
@@ -34,9 +35,9 @@ async function main() {
   };
   fs.mkdirSync(salida, { recursive: true });
   fs.writeFileSync(path.join(salida, `operacion_${fecha}.json`), JSON.stringify(out, null, 1));
-  const filas = [['Transporte', 'Marina', 'Tour', 'Orden', 'Hora pick up', 'Llegada estimada', 'Hotel', 'Zona', 'Pax', 'Infantes', 'Reservas', 'Lugares del transporte', 'Alertas']];
-  for (const b of bloques) b.paradas.forEach((p, i) => filas.push([String(b.numero), b.marina, b.tour, String(i + 1), p.hora ?? '', p.llegada ?? '', p.hotel, p.zona,
-    String(p.pax), String(p.inf), p.reservas.join(' '), String(b.ocupa), i === 0 ? b.alertas.join(' · ') : '']));
+  const filas = [['Transporte', 'Llevar a', 'Tour', 'Parada', 'Hora pick up', 'Llegada estimada', 'Hotel', 'Zona', 'Cliente', 'Cupón', 'Hab', 'Adultos+Menores', 'Infantes', 'Producto', 'Agencia', 'Reserva', 'Lugares del transporte', 'Alertas']];
+  for (const b of bloques) b.paradas.forEach((p, i) => p.clientes.forEach((c, j) => filas.push([String(b.numero), `Marina ${b.marina}`, b.tour, String(i + 1), p.hora ?? '', p.llegada ?? '',
+    p.hotel, p.zona, c.cliente, c.cupon ?? '', c.hab ?? '', String(c.pax), String(c.inf), c.producto, c.agencia, c.reserva, String(b.ocupa), i === 0 && j === 0 ? b.alertas.join(' · ') : ''])));
   fs.writeFileSync(path.join(salida, `operacion_${fecha}.csv`), filas.map((f) => f.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n'));
   console.log(out.resumen);
   await pool.end();

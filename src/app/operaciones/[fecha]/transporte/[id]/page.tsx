@@ -20,7 +20,7 @@ export default async function ManifiestoPage({ params }: { params: { fecha: stri
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Manifiesto · Transporte {m.numero}</h1>
-          <p className="text-suave">{fechaLarga(m.fecha)} · Marina {m.marina} · Tour {m.horaTour}</p>
+          <p className="text-suave">{fechaLarga(m.fecha)} · Llevar a Marina {m.marina} · Tour {m.horaTour}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <a className="btn-primario" href={`https://wa.me/?text=${encodeURIComponent(texto)}`} target="_blank" rel="noreferrer">Compartir por WhatsApp</a>
@@ -44,10 +44,10 @@ export default async function ManifiestoPage({ params }: { params: { fecha: stri
             <p className="text-xs text-suave">{p.zona}</p>
             {p.nota && <p className="mt-1 text-sm font-semibold text-alerta">{p.nota}</p>}
             <table className="tabla mt-2">
-              <thead><tr><th>Pasajero</th><th>Reserva</th><th>Producto</th><th className="text-right">Pax</th></tr></thead>
+              <thead><tr><th>Cliente</th><th>Cupón</th><th>Hab</th><th>Producto</th><th>Agencia · Rep</th><th className="text-right">Pax</th></tr></thead>
               <tbody>
                 {p.reservas.map((r) => (
-                  <tr key={r.reserva}><td>{r.cliente}<div className="text-xs text-suave">{r.agencia}</div></td><td className="font-mono text-xs">{r.reserva}</td><td>{r.producto}</td><td className="tabular text-right">{r.pax}{r.infantes ? ` +${r.infantes}` : ''}</td></tr>
+                  <tr key={r.reserva}><td className="font-semibold">{r.cliente}<div className="font-mono text-xs font-normal text-suave">{r.reserva}</div></td><td className="font-mono text-xs">{r.cupon ?? '—'}</td><td className="font-mono text-xs">{r.hab ?? '—'}</td><td>{r.producto}</td><td className="text-xs">{r.agencia}{r.rep ? <div className="text-suave">{r.rep}</div> : null}</td><td className="tabular text-right">{r.pax}{r.infantes ? ` +${r.infantes}` : ''}</td></tr>
                 ))}
               </tbody>
             </table>

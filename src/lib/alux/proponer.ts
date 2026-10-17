@@ -129,7 +129,8 @@ export function lugares(pax: number, infantes: number, p: ParametrosAlux = PARAM
 
 export function proponer(reservas: ReservaAlux[], p: ParametrosAlux = PARAMETROS_BASE): TransportePropuesto[] {
   const grupos = new Map<string, ReservaAlux[]>();
-  for (const r of reservas) {
+  // orden estable: el mismo día siempre produce la misma propuesta
+  for (const r of [...reservas].sort((a, b) => a.id - b.id)) {
     const k = `${r.marinaNombre}|${r.horaTour}`;
     if (!grupos.has(k)) grupos.set(k, []);
     grupos.get(k)!.push(r);

@@ -32,7 +32,7 @@ const CAMPOS = ['cliente', 'cupon', 'hotel_texto', 'hora_pickup', 'adultos', 'me
 
 function valores(r: ReservaClasificada) {
   return {
-    reserva: r.reserva, cupon: r.cupon, cliente: r.cliente, hotel_texto: r.hotel, hotel_id: r.hotelId, hora_pickup: r.horaPickup,
+    reserva: r.reserva, cupon: r.cupon, hab: r.hab || null, cliente: r.cliente, hotel_texto: r.hotel, hotel_id: r.hotelId, hora_pickup: r.horaPickup,
     adultos: r.adultos, menores: r.menores, infantes: r.infantes, excursion_texto: r.excursion, producto_id: r.productoId,
     marina_id: r.marinaId, hora_tour: r.horaTour, agencia: r.agencia, preferencia: r.preferencia, rep: r.rep,
     comentario: r.comentario, nota_transporte: r.notaTransporte, estado: r.estado, alertas: r.alertas,
@@ -105,7 +105,7 @@ export async function importarOrden(html: string, archivo: string, usuarioId: st
 export async function reclasificarOperacion(operacionId: number) {
   const cat = await cargarCatalogo();
   const filas = await q<{ id: number } & Record<string, string | number>>(
-    `select id, cliente, cupon, '' hab, hotel_texto hotel, reserva, coalesce(to_char(hora_pickup, 'HH24:MI'), '') hora, adultos, menores, infantes,
+    `select id, cliente, cupon, coalesce(hab, '') hab, hotel_texto hotel, reserva, coalesce(to_char(hora_pickup, 'HH24:MI'), '') hora, adultos, menores, infantes,
             excursion_texto excursion, rep, agencia, preferencia, comentario from reservas where operacion_id = $1`,
     [operacionId],
   );
