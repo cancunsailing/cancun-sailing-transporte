@@ -60,6 +60,6 @@ export const PRODUCTOS: [string, string, string | null, string, string[]][] = [
 
 // Transportistas confirmados por Joel (flota y tarifas pendientes)
 export const TRANSPORTISTAS: [string, number, string[]][] = [
-  ['MADI', 1, ['CUN_CENTRO', 'CUN_ZH', 'PLAYA_MUJERES', 'COSTA_MUJERES', 'PTO_JUAREZ']],
+  ['Link Shuttle (MADI)', 1, ['CUN_CENTRO', 'CUN_ZH', 'PLAYA_MUJERES', 'COSTA_MUJERES', 'PTO_JUAREZ']],
 ];
 
