@@ -206,7 +206,10 @@ export function proponer(reservas: ReservaAlux[], p: ParametrosAlux = PARAMETROS
     // Dentro de un transporte las paradas van en el orden de sus horas de pick up del catálogo
     // (son fijas); la distancia a la marina decide qué paradas quedan de paso.
     const ordenar = (ps: Parada[]) => [...ps].sort((a, b) => a.horaPickup.localeCompare(b.horaPickup) || b.dm - a.dm);
-    const avanza = (sec: Parada[]) => sec.every((x, i) => i === 0 || x.dm <= sec[i - 1].dm + p.toleranciaMin);
+    // Los tramos lejanos (Sur, Norte, y Zona Hotelera hacia Punta Norte) van antes que los de Cancún: nunca se regresa.
+    const rango = (t: string) => (t === 'Cancún' ? 1 : 0);
+    const avanza = (sec: Parada[]) =>
+      sec.every((x, i) => i === 0 || (x.dm <= sec[i - 1].dm + p.toleranciaMin && rango(x.tramo) >= rango(sec[i - 1].tramo)));
     const cabe = (v: Van, s: Parada, max: number) =>
       lugares(v.pax + s.pax, v.infantes + s.infantes, p) <= p.capacidad && v.paradas.length < max;
     const compatible = (v: Van, s: Parada) => {

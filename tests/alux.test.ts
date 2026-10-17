@@ -68,6 +68,13 @@ describe('reglas de Alux', () => {
     expect(v.reservaIds.slice(0, 3)).toEqual([1, 2, 3]);
     expect(t.every((x) => x.lugares <= 20)).toBe(true);
   });
+  it('no regresa de Cancún a Costa Mujeres camino a Las Perlas', () => {
+    const t = proponer([
+      base({ id: 1, hotelId: 1, zonaClave: 'CUN_ZH', minutosMarina: 30, horaPickup: '08:05', pax: 4 }),
+      base({ id: 2, hotelId: 2, zonaClave: 'COSTA_MUJERES', minutosMarina: 28, horaPickup: '08:35', pax: 4 }),
+    ]);
+    expect(t).toHaveLength(2);
+  });
   it('a Punta Norte no mete Zona Hotelera en rutas del sur', () => {
     const t = proponer([
       base({ id: 1, hotelId: 1, zonaClave: 'PTO_MORELOS', marinaNombre: 'Punta Norte', marinaId: 2, minutosMarina: 45, pax: 4 }),
