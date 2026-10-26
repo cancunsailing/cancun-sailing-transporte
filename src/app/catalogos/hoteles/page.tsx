@@ -21,12 +21,13 @@ export default async function Hoteles({ searchParams }: { searchParams: { q?: st
   }
   if (searchParams.zona) { params.push(Number(searchParams.zona)); where.push(`h.zona_id = $${params.length}`); }
   if (searchParams.ubicacion) { params.push(searchParams.ubicacion); where.push(`h.ubicacion = $${params.length}`); }
-  const hoteles = await q<{ id: number; nombre: string; zona: string; ubicacion: string; alias: number; lp: string | null; pn: string | null }>(
-    `select h.id, h.nombre, z.nombre zona, h.ubicacion,
+  const hoteles = await q<{ id: number; nombre: string; zona: string; cobro: string | null; cobro_propio: boolean; ubicacion: string; alias: number; lp: string | null; pn: string | null }>(
+    `select h.id, h.nombre, z.nombre zona, coalesce(th.nombre, tz.nombre) cobro, h.zona_tarifa_id is not null cobro_propio, h.ubicacion,
        (select count(*)::int - 1 from hotel_alias a where a.hotel_id = h.id) alias,
        (select minutos::text from hotel_marina hm join marinas m on m.id = hm.marina_id where hm.hotel_id = h.id and m.nombre = 'Las Perlas') lp,
        (select minutos::text from hotel_marina hm join marinas m on m.id = hm.marina_id where hm.hotel_id = h.id and m.nombre = 'Punta Norte') pn
      from hoteles h join zonas z on z.id = h.zona_id
+     left join zonas_tarifa th on th.id = h.zona_tarifa_id left join zonas_tarifa tz on tz.id = z.zona_tarifa_id
      where ${where.join(' and ')} order by z.id, h.nombre limit 500`,
     params,
   );
@@ -62,7 +63,7 @@ export default async function Hoteles({ searchParams }: { searchParams: { q?: st
       </form>
       <div className="tarjeta overflow-x-auto">
         <table className="tabla">
-          <thead><tr><th>Hotel</th><th>Zona</th><th>Ubicación</th><th className="text-right">Min a Las Perlas</th><th className="text-right">Min a Punta Norte</th></tr></thead>
+          <thead><tr><th>Hotel</th><th>Zona</th><th>Se cobra como</th><th>Ubicación</th><th className="text-right">Min a Las Perlas</th><th className="text-right">Min a Punta Norte</th></tr></thead>
           <tbody>
             {hoteles.map((h) => (
               <tr key={h.id}>
@@ -71,6 +72,7 @@ export default async function Hoteles({ searchParams }: { searchParams: { q?: st
                   {h.alias > 0 && <span className="ml-2 text-xs text-suave">{h.alias} alias</span>}
                 </td>
                 <td>{h.zona}</td>
+                <td className={h.cobro_propio ? 'font-semibold' : 'text-suave'}>{h.cobro ?? '—'}</td>
                 <td><span className={`chip ${UBIC[h.ubicacion][1]}`}>{UBIC[h.ubicacion][0]}</span></td>
                 <td className="tabular text-right">{h.lp ?? '—'}</td>
                 <td className="tabular text-right">{h.pn ?? '—'}</td>

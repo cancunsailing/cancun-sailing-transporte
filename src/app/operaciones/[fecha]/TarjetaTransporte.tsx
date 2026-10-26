@@ -6,10 +6,12 @@ import { MoverReserva } from './MoverReserva';
 const COLOR: Record<string, string> = { 'Las Perlas': 'border-l-perlas', 'Punta Norte': 'border-l-norte' };
 
 export function TarjetaTransporte({
-  t, operacionId, fecha, destinos, editar, transportistas, unidades,
+  t, operacionId, fecha, destinos, editar, transportistas, unidades, sugerencia,
 }: {
   t: TransporteVista; operacionId: number; fecha: string; destinos: { id: number; etiqueta: string }[]; editar: boolean;
   transportistas: { id: number; nombre: string }[]; unidades: { id: number; transportista_id: number; etiqueta: string }[];
+  /** Proveedor y unidad que propone Alux por costo */
+  sugerencia?: string;
 }) {
   const cap = t.capacidadUnidad ?? 20;
   const pct = Math.min(100, (t.lugares / cap) * 100);
@@ -28,6 +30,9 @@ export function TarjetaTransporte({
         <div className="h-1.5 overflow-hidden rounded bg-linea"><div className={`h-full ${t.lugares > cap ? 'bg-alerta' : 'bg-tinta'}`} style={{ width: `${pct}%` }} /></div>
         <span><b className="tabular text-tinta">{t.lugares}</b> / {cap} lugares · {t.paradas.length} pick up{t.paradas.length === 1 ? '' : 's'}</span>
       </div>
+      {sugerencia && (
+        <p className="rounded bg-fondo px-2 py-1 text-xs"><span className="text-suave">Alux sugiere: </span>{sugerencia}</p>
+      )}
       <ol className="grid gap-2">
         {t.paradas.map((p, i) => (
           <li key={p.clave} className="grid grid-cols-[3.2rem_1fr_auto] gap-2 text-sm">

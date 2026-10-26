@@ -11,13 +11,17 @@ export default async function Hotel({ params, searchParams }: { params: { id: st
   const editar = puede(s, PERMISOS.editarCatalogos);
   const nuevo = params.id === 'nuevo';
   const [h] = nuevo
-    ? [{ id: 0, nombre: '', zona_id: 0, lat: null, lon: null, ubicacion: 'por_confirmar' }]
-    : await q<{ id: number; nombre: string; zona_id: number; lat: number | null; lon: number | null; ubicacion: string }>(
-        'select id, nombre, zona_id, lat, lon, ubicacion from hoteles where id = $1',
+    ? [{ id: 0, nombre: '', zona_id: 0, zona_tarifa_id: null, lat: null, lon: null, ubicacion: 'por_confirmar' }]
+    : await q<{ id: number; nombre: string; zona_id: number; zona_tarifa_id: number | null; lat: number | null; lon: number | null; ubicacion: string }>(
+        'select id, nombre, zona_id, zona_tarifa_id, lat, lon, ubicacion from hoteles where id = $1',
         [Number(params.id)],
       );
   if (!h) notFound();
-  const zonas = await q<{ id: number; nombre: string }>('select id, nombre from zonas order by id');
+  const zonas = await q<{ id: number; nombre: string; cobro: string | null }>(
+    'select z.id, z.nombre, t.nombre cobro from zonas z left join zonas_tarifa t on t.id = z.zona_tarifa_id order by z.id',
+  );
+  const tarifas = await q<{ id: number; nombre: string }>('select id, nombre from zonas_tarifa order by orden');
+  const cobroZona = zonas.find((z) => z.id === h.zona_id)?.cobro;
   const columnas = await q<{ id: number; nombre: string; hora: string | null }>(
     `select c.id, c.nombre, to_char(p.hora, 'HH24:MI') hora from columnas_horario c
      left join hotel_pickup p on p.columna_horario_id = c.id and p.hotel_id = $1 order by c.id`,
@@ -46,6 +50,14 @@ export default async function Hotel({ params, searchParams }: { params: { id: st
             <option value="" disabled>Elige una zona</option>
             {zonas.map((z) => <option key={z.id} value={z.id}>{z.nombre}</option>)}
           </select>
+        </div>
+        <div>
+          <label className="etiqueta" htmlFor="zona_tarifa_id">Zona de cobro</label>
+          <select id="zona_tarifa_id" name="zona_tarifa_id" defaultValue={h.zona_tarifa_id ?? ''} disabled={!editar} className="campo">
+            <option value="">La de su zona{cobroZona ? ` (${cobroZona})` : ''}</option>
+            {tarifas.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+          </select>
+          <p className="mt-1 text-xs text-suave">La que usan los proveedores para cobrar. Solo cámbiala si este hotel se cobra distinto a su zona.</p>
         </div>
         <div>
           <label className="etiqueta" htmlFor="coordenadas">Ubicación (latitud, longitud o liga de Google Maps)</label>

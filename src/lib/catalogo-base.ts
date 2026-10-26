@@ -58,8 +58,31 @@ export const PRODUCTOS: [string, string, string | null, string, string[]][] = [
   ['Plus Punta Norte', '12:00', PN, 'PRV12', ['PLUS PUNTA NORTE']],
 ];
 
-// Transportistas confirmados por Joel (flota y tarifas pendientes)
+// Transportistas confirmados por Joel. La flota y las tarifas no van en el repositorio:
+// se cargan desde data/private/proveedores.json o desde el catálogo de proveedores de la plataforma.
 export const TRANSPORTISTAS: [string, number, string[]][] = [
   ['Link Shuttle (MADI)', 1, ['CUN_CENTRO', 'CUN_ZH', 'PLAYA_MUJERES', 'COSTA_MUJERES', 'PTO_JUAREZ']],
+];
+
+// Minutos mínimos entre pick ups por zona de operación (se ajustan en Configuración).
+// Riviera Maya Z1 a Z3 y Puerto Morelos (Riviera Maya Z4): 10 minutos; el resto, sin mínimo.
+export const MIN_ENTRE_PICKUPS: Record<string, number> = { RM_Z1: 10, RM_Z2: 10, RM_Z3: 10, PTO_MORELOS: 10 };
+
+// Zona de cobro de los hoteles de cada zona de operación (validado con Jimmy Vera, 26 oct 2026).
+// Moon Palace es el límite de Cancún; pasando Moon Palace ya es Puerto Morelos.
+export const ZONA_TARIFA: Record<string, string> = {
+  CUN_ZH: 'CANCUN', CUN_CENTRO: 'CANCUN', PTO_JUAREZ: 'CANCUN',
+  COSTA_MUJERES: 'COSTA_MUJERES', PLAYA_MUJERES: 'COSTA_MUJERES',
+  PTO_MORELOS: 'PTO_MORELOS',
+  RM_Z3: 'PDC', PDC: 'PDC', PLAYACAR: 'PDC',
+  RM_Z2: 'PTO_AVENTURAS', RM_Z1: 'AKUMAL', TULUM: 'TULUM',
+};
+
+// Hoteles que se cobran en una zona distinta a la de su zona de operación.
+// Playa del Carmen se cobra hasta Flamenco Xcaret (Occidental Xcaret), aunque operativamente sea Riviera Maya Z2.
+export const ZONA_TARIFA_HOTEL: [string, string][] = [
+  ['HOTEL XCARET MEXICO', 'PDC'],
+  ['HOTEL XCARET ARTE', 'PDC'],
+  ['FLAMENCO XCARET // OCCIDENTAL XCARET', 'PDC'],
 ];
 

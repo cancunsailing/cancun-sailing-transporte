@@ -6,6 +6,8 @@ import { q } from '@/lib/db';
 import { fechaLarga } from '@/lib/fechas';
 import { aprobarOperacion, regenerar, resolverHotel } from '../actions';
 import { TarjetaTransporte } from './TarjetaTransporte';
+import { costoPropuesta } from '@/lib/costos-operacion';
+import { pesos } from '@/lib/proveedores';
 import { MoverReserva } from './MoverReserva';
 
 export const dynamic = 'force-dynamic';
@@ -41,6 +43,10 @@ export default async function Operacion({ params, searchParams }: { params: { fe
   const promedio = d.transportes.length ? (d.transportes.reduce((a, t) => a + t.lugares, 0) / d.transportes.length).toFixed(1) : '—';
   const destinos = d.transportes.map((t) => ({ id: t.id, etiqueta: `Transporte ${t.numero} · ${t.marina ?? ''} ${t.horaTour ?? ''} · ${t.lugares} lugares` }));
   const alertasReservas = d.conTransporte.filter((r) => r.alertas.length);
+  // Costo estimado: Alux asigna el proveedor más barato con unidades disponibles (solo si ya hay tarifas cargadas)
+  const costo = await costoPropuesta(params.fecha, d).catch(() => null);
+  const conCosto = !!costo && costo.tarifario.tipos.length > 0 && costo.servicios.length > 0;
+  const numero = new Map(d.transportes.map((t) => [t.id, t.numero]));
 
   return (
     <div className="grid gap-6">
@@ -76,6 +82,7 @@ export default async function Operacion({ params, searchParams }: { params: { fe
           [d.transportes.length, 'transportes'],
           [promedio, 'lugares por transporte'],
           [d.sinAsignar.length, 'sin asignar'],
+          ...(conCosto ? [[pesos(costo!.resumen.total), 'costo estimado con IVA']] : []),
         ].map(([v, l]) => (
           <div key={String(l)} className="grid">
             <b className={`tabular text-xl ${l === 'sin asignar' && Number(v) > 0 ? 'text-alerta' : ''}`}>{v}</b>
@@ -111,6 +118,40 @@ export default async function Operacion({ params, searchParams }: { params: { fe
         </section>
       )}
 
+      {conCosto && (
+        <details className="tarjeta p-4">
+          <summary className="cursor-pointer font-bold">Costo estimado del día: {pesos(costo!.resumen.total)} con IVA</summary>
+          <div className="mt-3 grid gap-3">
+            <p className="text-sm text-suave">
+              Alux asigna a cada transporte el proveedor más barato con unidades disponibles; las unidades de renta hacen hasta dos idas.
+              Cada viaje se cobra con la zona más lejana de sus paradas, el regreso al mismo precio que la ida y la renta del día cubre los regresos.
+              Supone que toda la flota está disponible.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="tabla">
+                <thead><tr><th>Proveedor</th><th className="text-right">Unidades</th><th className="text-right">Viajes</th><th className="text-right">Con renta</th><th className="text-right">Subtotal</th></tr></thead>
+                <tbody>
+                  {costo!.resumen.porProveedor.map((r) => (
+                    <tr key={r.proveedor}>
+                      <td>{r.proveedor}</td><td className="tabular text-right">{r.unidades}</td><td className="tabular text-right">{r.servicios}</td>
+                      <td className="tabular text-right">{r.rentas || '—'}</td><td className="tabular text-right">{pesos(r.subtotal)}</td>
+                    </tr>
+                  ))}
+                  <tr><td colSpan={4}>Subtotal</td><td className="tabular text-right">{pesos(costo!.resumen.subtotal)}</td></tr>
+                  <tr><td colSpan={4}>IVA {Math.round(costo!.tarifario.iva * 100)}%</td><td className="tabular text-right">{pesos(costo!.resumen.iva)}</td></tr>
+                  <tr className="font-bold"><td colSpan={4}>Total</td><td className="tabular text-right">{pesos(costo!.resumen.total)}</td></tr>
+                </tbody>
+              </table>
+            </div>
+            {costo!.asignacion.sinUnidad.length > 0 && (
+              <p className="text-sm font-semibold text-alerta">
+                Sin unidad disponible: transporte {costo!.asignacion.sinUnidad.map((id) => numero.get(id)).join(', ')}. No entra en el costo.
+              </p>
+            )}
+          </div>
+        </details>
+      )}
+
       <div className="flex flex-wrap gap-2" aria-label="Filtrar por marina">
         <Link href={`/operaciones/${d.op.fecha}`} className={`btn ${!filtro ? 'border-tinta bg-tinta text-white hover:bg-tinta' : ''}`}>Todas</Link>
         {marinas.map((m) => (
@@ -127,7 +168,7 @@ export default async function Operacion({ params, searchParams }: { params: { fe
           <div className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
             {ts.map((t) => (
               <TarjetaTransporte key={t.id} t={t} operacionId={d.op.id} fecha={d.op.fecha} destinos={destinos} editar={editar}
-                transportistas={transportistas} unidades={unidades} />
+                transportistas={transportistas} unidades={unidades} sugerencia={conCosto ? costo!.sugerencias[t.id] : undefined} />
             ))}
           </div>
         </section>

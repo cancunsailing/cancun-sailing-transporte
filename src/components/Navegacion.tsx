@@ -8,6 +8,7 @@ export function Navegacion({ sesion }: { sesion: Sesion }) {
     { href: '/mis-servicios', txt: 'Mis servicios', ok: sesion.rol === 'transportista' },
     { href: '/catalogos/hoteles', txt: 'Hoteles', ok: puede(sesion, PERMISOS.verCatalogos) },
     { href: '/catalogos/productos', txt: 'Productos', ok: puede(sesion, PERMISOS.verCatalogos) },
+    { href: '/catalogos/proveedores', txt: 'Proveedores', ok: puede(sesion, PERMISOS.verCatalogos) },
     { href: '/alux', txt: 'Aprendizaje de Alux', ok: puede(sesion, PERMISOS.revisarReglas) },
     { href: '/usuarios', txt: 'Usuarios', ok: puede(sesion, PERMISOS.administrarUsuarios) },
     { href: '/configuracion', txt: 'Configuración', ok: puede(sesion, PERMISOS.editarCatalogos) },

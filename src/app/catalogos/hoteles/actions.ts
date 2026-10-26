@@ -23,6 +23,7 @@ export async function guardarHotel(form: FormData) {
   const id = form.get('id') ? Number(form.get('id')) : null;
   const nombre = String(form.get('nombre') || '').trim();
   const zona = Number(form.get('zona_id'));
+  const zonaTarifa = form.get('zona_tarifa_id') ? Number(form.get('zona_tarifa_id')) : null;
   if (!nombre || !zona) throw new Error('Nombre y zona son obligatorios.');
   const coordTxt = String(form.get('coordenadas') || '');
   const coord = coordTxt ? leerCoordenadas(coordTxt) : null;
@@ -34,15 +35,15 @@ export async function guardarHotel(form: FormData) {
     let hid = id;
     if (hid) {
       await c.query(
-        `update hoteles set nombre = $2, zona_id = $3, actualizado_en = now()
+        `update hoteles set nombre = $2, zona_id = $3, zona_tarifa_id = $4, actualizado_en = now()
            ${cambioUbic ? `, lat = ${coord!.lat}, lon = ${coord!.lon}, ubicacion = 'alta'` : ''}
          where id = $1`,
-        [hid, nombre, zona],
+        [hid, nombre, zona, zonaTarifa],
       );
     } else {
       const r = await c.query<{ id: number }>(
-        `insert into hoteles (nombre, zona_id, lat, lon, ubicacion) values ($1,$2,$3,$4,$5) returning id`,
-        [nombre, zona, coord?.lat ?? null, coord?.lon ?? null, coord ? 'alta' : 'por_confirmar'],
+        `insert into hoteles (nombre, zona_id, zona_tarifa_id, lat, lon, ubicacion) values ($1,$2,$3,$4,$5,$6) returning id`,
+        [nombre, zona, zonaTarifa, coord?.lat ?? null, coord?.lon ?? null, coord ? 'alta' : 'por_confirmar'],
       );
       hid = r[0].id;
     }

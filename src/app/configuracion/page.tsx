@@ -12,6 +12,9 @@ const PARAMS: [string, string, string][] = [
   ['tolerancia_orden_min', 'Tolerancia al ordenar paradas hacia la marina', 'min'],
   ['anticipacion_min', 'Minutos que el transporte puede llegar antes del pick up', 'min'],
   ['tolerancia_retraso_min', 'Minutos máximos de retraso contra el pick up', 'min'],
+  ['renta_min_servicios', 'Servicios en la mañana para que una unidad de renta cobre la renta del día', 'servicios'],
+  ['max_idas_unidad', 'Idas que puede hacer en la mañana una unidad de renta', 'idas'],
+  ['margen_segunda_ida_min', 'Minutos entre dejar en la marina y salir a la segunda ida', 'min'],
 ];
 
 export default async function Configuracion({ searchParams }: { searchParams: { guardado?: string } }) {

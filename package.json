@@ -15,7 +15,8 @@
     "db:reset": "tsx scripts/migrate.ts --reset && tsx scripts/seed.ts",
     "user:create": "tsx scripts/create-user.ts",
     "importar": "tsx scripts/importar.ts",
-    "exportar": "tsx scripts/exportar-operacion.ts"
+    "exportar": "tsx scripts/exportar-operacion.ts",
+    "proveedores": "tsx scripts/proveedores.ts"
   },
   "dependencies": {
     "bcryptjs": "2.4.3",

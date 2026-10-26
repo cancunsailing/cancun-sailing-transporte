@@ -8,7 +8,8 @@ import path from 'node:path';
 import { parse } from 'csv-parse/sync';
 import { client } from './db';
 import { norm, hhmm } from '../src/lib/normalize';
-import { ZONAS, MARINAS, COLUMNAS, PRODUCTOS, TRANSPORTISTAS, LP, PN } from '../src/lib/catalogo-base';
+import { ZONAS, MARINAS, COLUMNAS, PRODUCTOS, TRANSPORTISTAS, LP, PN, MIN_ENTRE_PICKUPS, ZONA_TARIFA, ZONA_TARIFA_HOTEL } from '../src/lib/catalogo-base';
+import { cargarProveedores } from './proveedores';
 
 const CONF: Record<string, string> = { alta: 'alta', media: 'media', 'por confirmar': 'por_confirmar' };
 
@@ -17,11 +18,16 @@ async function main() {
   await c.query('begin');
   try {
     const zona: Record<string, number> = {};
+    // Los mínimos entre pick ups y la zona de cobro solo se llenan si están vacíos: no se pisa lo que se configuró en la plataforma.
     for (const [csvName, clave, nombre, corr] of ZONAS) {
       const r = await c.query(
-        `insert into zonas (clave, nombre, corredor) values ($1,$2,$3)
-         on conflict (clave) do update set nombre = excluded.nombre, corredor = excluded.corredor returning id`,
-        [clave, nombre, corr],
+        `insert into zonas (clave, nombre, corredor, min_entre_pickups, zona_tarifa_id)
+         values ($1,$2,$3,$4,(select id from zonas_tarifa where clave = $5))
+         on conflict (clave) do update set nombre = excluded.nombre, corredor = excluded.corredor,
+           min_entre_pickups = coalesce(zonas.min_entre_pickups, excluded.min_entre_pickups),
+           zona_tarifa_id = coalesce(zonas.zona_tarifa_id, excluded.zona_tarifa_id)
+         returning id`,
+        [clave, nombre, corr, MIN_ENTRE_PICKUPS[clave] ?? 0, ZONA_TARIFA[clave] ?? null],
       );
       zona[csvName] = r.rows[0].id;
     }
@@ -109,8 +115,17 @@ async function main() {
       }
       n++;
     }
+    for (const [hotel, tarifa] of ZONA_TARIFA_HOTEL) {
+      await c.query(
+        `update hoteles set zona_tarifa_id = (select id from zonas_tarifa where clave = $2)
+         where nombre = $1 and zona_tarifa_id is null`,
+        [hotel, tarifa],
+      );
+    }
+    const prov = await cargarProveedores(c);
     await c.query('commit');
     console.log(`Catálogos cargados: ${ZONAS.length} zonas, ${MARINAS.length} marinas, ${PRODUCTOS.length} productos, ${n} hoteles`);
+    console.log(prov);
   } catch (e) {
     await c.query('rollback');
     throw e;
